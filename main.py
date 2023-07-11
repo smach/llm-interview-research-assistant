@@ -129,16 +129,16 @@ st.header("LLM Assisted Interview Prep")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown("Have an interview coming up? I bet they are on YouTube or the web. This tool is meant to help you generate \
+    st.markdown("Have an interview coming up? Your subject is probably on YouTube or the web. This tool is meant to help you generate \
                 interview questions based off of topics they've recently tweeted or talked about.\
-                \n\nThis tool is powered by [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/#) [markdownify](https://pypi.org/project/markdownify/) [Tweepy](https://docs.tweepy.org/en/stable/api.html), [LangChain](https://langchain.com/) and [OpenAI](https://openai.com) and made by \
+                \n\nThis tool is powered by [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/#) [markdownify](https://pypi.org/project/markdownify/), [LangChain](https://langchain.com/) and [OpenAI](https://openai.com) and made by \
                 [@GregKamradt](https://twitter.com/GregKamradt). \n\n View Source Code on [Github](https://github.com/gkamradt/globalize-text-streamlit/blob/main/main.py)")
 
 with col2:
     st.image(image='Researcher.png', width=300, caption='Mid Journey: A researcher who is really good at their job and utilizes twitter to do research about the person they are interviewing. playful, pastels. --ar 4:7')
 # End Top Information
 
-st.markdown("## :older_man: Larry The LLM Researcher")
+st.markdown("## :older_man: Your LLM Researcher")
 
 # Output type selection by the user
 output_type = st.radio(
