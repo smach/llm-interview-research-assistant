@@ -8,9 +8,6 @@ from langchain.prompts import PromptTemplate
 # Streamlit
 import streamlit as st
 
-# Twitter
-import tweepy
-
 # Scraping
 import requests
 from bs4 import BeautifulSoup
@@ -27,10 +24,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get your API keys set
-TWITTER_API_KEY = os.getenv('TWITTER_API_KEY', 'YourAPIKeyIfNotSet')
-TWITTER_API_SECRET = os.getenv('TWITTER_API_SECRET', 'YourAPIKeyIfNotSet')
-TWITTER_ACCESS_TOKEN = os.getenv('TWITTER_ACCESS_TOKEN', 'YourAPIKeyIfNotSet')
-TWITTER_ACCESS_TOKEN_SECRET = os.getenv('TWITTER_ACCESS_TOKEN_SECRET', 'YourAPIKeyIfNotSet')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', 'YourAPIKeyIfNotSet')
 
 # Load up your LLM
@@ -45,44 +38,8 @@ def get_openai_api_key():
     input_text = st.text_input(label="OpenAI API Key (or set it as .env variable)",  placeholder="Ex: sk-2twmA8tfCb8un4...", key="openai_api_key_input")
     return input_text
 
-# We'll query 80 tweets because we end up filtering out a bunch
-def get_original_tweets(screen_name, tweets_to_pull=80, tweets_to_return=80):
-    st.write("Getting Tweets...")
-    # Tweepy set up
-    auth = tweepy.OAuthHandler(TWITTER_API_KEY, TWITTER_API_SECRET)
-    auth.set_access_token(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET)
-    api = tweepy.API(auth)
 
-    # Holder for the tweets you'll find
-    tweets = []
-    
-    # Go and pull the tweets
-    tweepy_results = tweepy.Cursor(api.user_timeline,
-                                   screen_name=screen_name,
-                                   tweet_mode='extended',
-                                   exclude_replies=True).items(tweets_to_pull)
-    
-    # Run through tweets and remove retweets and quote tweets so we can only look at a user's raw emotions
-    for status in tweepy_results:
-        if hasattr(status, 'retweeted_status') or hasattr(status, 'quoted_status'):
-            # Skip if it's a retweet or quote tweet
-            continue
-        else:
-            tweets.append({'full_text': status.full_text, 'likes': status.favorite_count})
-
-    
-    # Sort the tweets by number of likes. This will help us short_list the top ones later
-    sorted_tweets = sorted(tweets, key=lambda x: x['likes'], reverse=True)
-
-    # Get the text and drop the like count from the dictionary
-    full_text = [x['full_text'] for x in sorted_tweets][:tweets_to_return]
-    
-    # Convert the list of tweets into a string of tweets we can use in the prompt later
-    users_tweets = "\n\n".join(full_text)
-            
-    return users_tweets
-
-# Here we'll pull data from a website and return it's text
+# Here we'll pull data from a website and return its text
 def pull_from_website(url):
     st.write("Getting webpages...")
     # Doing a try in case it doesn't work
@@ -137,7 +94,7 @@ response_types = {
 
 map_prompt = """You are a helpful AI bot that aids a user in research.
 Below is information about a person named {persons_name}.
-Information will include tweets, interview transcripts, and blog posts about {persons_name}
+Information will include  interview transcripts and blog posts about {persons_name}
 Use specifics from the research when possible
 
 {response_type}
@@ -172,7 +129,7 @@ st.header("LLM Assisted Interview Prep")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown("Have an interview coming up? I bet they are on Twitter or YouTube or the web. This tool is meant to help you generate \
+    st.markdown("Have an interview coming up? I bet they are on YouTube or the web. This tool is meant to help you generate \
                 interview questions based off of topics they've recently tweeted or talked about.\
                 \n\nThis tool is powered by [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/#) [markdownify](https://pypi.org/project/markdownify/) [Tweepy](https://docs.tweepy.org/en/stable/api.html), [LangChain](https://langchain.com/) and [OpenAI](https://openai.com) and made by \
                 [@GregKamradt](https://twitter.com/GregKamradt). \n\n View Source Code on [Github](https://github.com/gkamradt/globalize-text-streamlit/blob/main/main.py)")
@@ -190,13 +147,9 @@ output_type = st.radio(
 
 # Collect information about the person you want to research
 person_name = st.text_input(label="Person's Name",  placeholder="Ex: Elad Gil", key="persons_name")
-twitter_handle = st.text_input(label="Twitter Username",  placeholder="@eladgil", key="twitter_user_input")
 youtube_videos = st.text_input(label="YouTube URLs (Use , to seperate videos)",  placeholder="Ex: https://www.youtube.com/watch?v=c_hO_fjmMnk, https://www.youtube.com/watch?v=c_hO_fjmMnk", key="youtube_user_input")
 webpages = st.text_input(label="Web Page URLs (Use , to seperate urls. Must include https://)",  placeholder="https://eladgil.com/", key="webpage_user_input")
 
-# Check to see if there is an @ symbol or not on the user name
-if twitter_handle and twitter_handle[0] == "@":
-    twitter_handle = twitter_handle[1:]
 
 # Output
 st.markdown(f"### {output_type}:")
@@ -215,7 +168,7 @@ button_ind = st.button("*Generate Output*", type='secondary', help="Click to gen
 
 # Checking to see if the button_ind is true. If so, this means the button was clicked and we should process the links
 if button_ind:
-    if not (twitter_handle or youtube_videos or webpages):
+    if not (youtube_videos or webpages):
         st.warning('Please provide links to parse', icon="⚠️")
         st.stop()
 
@@ -228,11 +181,10 @@ if button_ind:
         OPENAI_API_KEY = get_openai_api_key()
 
     # Go get your data
-    user_tweets = get_original_tweets(twitter_handle) if twitter_handle else ""
     video_text = get_content_from_urls(parse_urls(youtube_videos), get_video_transcripts) if youtube_videos else ""
     website_data = get_content_from_urls(parse_urls(webpages), pull_from_website) if webpages else ""
 
-    user_information = "\n".join([user_tweets, video_text, website_data])
+    user_information = "\n".join([video_text, website_data])
 
     user_information_docs = split_text(user_information)
 
